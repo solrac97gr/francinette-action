@@ -1,0 +1,61 @@
+name: 'Francinette (42 Tester)'
+description: 'Run Francinette (also known as paco) to test 42 School projects'
+author: 'solrac97gr'
+inputs:
+  project:
+    description: 'Project to test (optional - will be detected automatically if not specified)'
+    required: false
+    default: ''
+  strict:
+    description: 'Run in strict mode to test against memory leaks and other issues'
+    required: false
+    default: 'false'
+  tests:
+    description: 'Specific tests to run (space separated)'
+    required: false
+    default: ''
+runs:
+  using: 'composite'
+  steps:
+    - name: Install dependencies
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc clang libbsd-dev libncurses-dev valgrind python3-pip python3-dev python3-venv
+        python3 -m pip install --upgrade pip
+        pip3 install wheel
+
+    - name: Install Francinette
+      shell: bash
+      run: |
+        cd $HOME
+        git clone --recursive https://github.com/xicodomingues/francinette.git
+        cd francinette
+        python3 -m venv venv
+        . venv/bin/activate
+        pip3 install -r requirements.txt
+        chmod +x tester.sh
+        
+    - name: Run Francinette
+      shell: bash
+      run: |
+        cd $GITHUB_WORKSPACE
+        
+        ARGS=""
+        if [ "${{ inputs.strict }}" == "true" ]; then
+          ARGS="$ARGS --strict"
+        fi
+        
+        if [ -n "${{ inputs.project }}" ]; then
+          ARGS="$ARGS --project ${{ inputs.project }}"
+        fi
+        
+        if [ -n "${{ inputs.tests }}" ]; then
+          ARGS="$ARGS ${{ inputs.tests }}"
+        fi
+        
+        $HOME/francinette/tester.sh $ARGS
+        
+branding:
+  icon: 'check-circle'
+  color: 'green'
