@@ -39,7 +39,7 @@ jobs:
           python-version: '3.10'
           
       - name: Run Francinette
-        uses: solrac97gr/libft-action@v1
+        uses: solrac97gr/francinette-action@v1
         with:
           strict: 'false'  # Set to 'true' for strict mode testing
           # project: 'libft'  # Optional: Specify a project or let Francinette detect it
