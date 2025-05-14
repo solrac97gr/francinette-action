@@ -55,7 +55,62 @@ runs:
           ARGS="$ARGS ${{ inputs.tests }}"
         fi
         
-        $HOME/francinette/tester.sh $ARGS
+        # Run Francinette and save the output to a file
+        $HOME/francinette/tester.sh $ARGS 2>&1 | tee /tmp/francinette_output.txt
+        
+    - name: Result Summary
+      shell: bash
+      run: |
+        # Check if there are errors in the output
+        OUTPUT=$(cat /tmp/francinette_output.txt)
+        
+        echo "============= FRANCINETTE RESULT SUMMARY ============="
+        
+        FAILED=false
+        
+        # Check for Norminette errors
+        if echo "$OUTPUT" | grep -q "Norminette Errors:"; then
+          NORM_ERRORS=$(echo "$OUTPUT" | grep -A 1 "Norminette Errors:" | tail -n 1)
+          echo "❌ Norminette errors found in files:"
+          echo "$NORM_ERRORS"
+          FAILED=true
+        else
+          echo "✅ No Norminette errors found"
+        fi
+        
+        # Check for failed tests
+        if echo "$OUTPUT" | grep -q "Failed tests:"; then
+          FAILED_TESTS=$(echo "$OUTPUT" | grep -A 1 "Failed tests:" | tail -n 1)
+          echo "❌ Tests failed for functions:"
+          echo "$FAILED_TESTS"
+          FAILED=true
+        else
+          echo "✅ All tests passed"
+        fi
+        
+        # Extract and display passed tests
+        if echo "$OUTPUT" | grep -q "Passed tests:"; then
+          PASSED_TESTS=$(echo "$OUTPUT" | grep -A 1 "Passed tests:" | tail -n 1)
+          echo "✅ Passed tests:"
+          echo "$PASSED_TESTS"
+        fi
+        
+        # Extract and display missing functions (not considered errors)
+        if echo "$OUTPUT" | grep -q "Missing functions:"; then
+          MISSING_FUNCTIONS=$(echo "$OUTPUT" | grep -A 1 "Missing functions:" | tail -n 1)
+          echo "ℹ️ Missing functions (not considered errors):"
+          echo "$MISSING_FUNCTIONS"
+        fi
+        
+        echo "===================================================="
+        
+        # Fail the action if there were any errors
+        if [ "$FAILED" = true ]; then
+          echo "::error::Francinette found errors in your code. See the summary above for details."
+          exit 1
+        else
+          echo "✅ All tests passed successfully!"
+        fi
         
 branding:
   icon: 'check-circle'
