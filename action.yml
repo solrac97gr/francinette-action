@@ -61,8 +61,8 @@ runs:
     - name: Result Summary
       shell: bash
       run: |
-        # Check if there are errors in the output
-        OUTPUT=$(cat /tmp/francinette_output.txt)
+        # Check if there are errors in the output - remove null bytes to avoid warnings
+        OUTPUT=$(cat /tmp/francinette_output.txt | tr -d '\0')
         
         echo "============= FRANCINETTE RESULT SUMMARY ============="
         
@@ -70,7 +70,7 @@ runs:
         
         # Check for Norminette errors
         if echo "$OUTPUT" | grep -q "Norminette Errors:"; then
-          NORM_ERRORS=$(echo "$OUTPUT" | grep -A 1 "Norminette Errors:" | tail -n 1)
+          NORM_ERRORS=$(echo "$OUTPUT" | grep "Norminette Errors:" | sed 's/Norminette Errors: //')
           echo "❌ Norminette errors found in files:"
           echo "$NORM_ERRORS"
           FAILED=true
@@ -80,7 +80,7 @@ runs:
         
         # Check for failed tests
         if echo "$OUTPUT" | grep -q "Failed tests:"; then
-          FAILED_TESTS=$(echo "$OUTPUT" | grep -A 1 "Failed tests:" | tail -n 1)
+          FAILED_TESTS=$(echo "$OUTPUT" | grep "Failed tests:" | sed 's/Failed tests: //')
           echo "❌ Tests failed for functions:"
           echo "$FAILED_TESTS"
           FAILED=true
@@ -90,14 +90,14 @@ runs:
         
         # Extract and display passed tests
         if echo "$OUTPUT" | grep -q "Passed tests:"; then
-          PASSED_TESTS=$(echo "$OUTPUT" | grep -A 1 "Passed tests:" | tail -n 1)
+          PASSED_TESTS=$(echo "$OUTPUT" | grep "Passed tests:" | sed 's/Passed tests: //')
           echo "✅ Passed tests:"
           echo "$PASSED_TESTS"
         fi
         
         # Extract and display missing functions (not considered errors)
         if echo "$OUTPUT" | grep -q "Missing functions:"; then
-          MISSING_FUNCTIONS=$(echo "$OUTPUT" | grep -A 1 "Missing functions:" | tail -n 1)
+          MISSING_FUNCTIONS=$(echo "$OUTPUT" | grep "Missing functions:" | sed 's/Missing functions: //')
           echo "ℹ️ Missing functions (not considered errors):"
           echo "$MISSING_FUNCTIONS"
         fi
